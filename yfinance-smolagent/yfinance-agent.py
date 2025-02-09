@@ -2,12 +2,12 @@ from smolagents import (
     OpenAIServerModel,
     ToolCallingAgent,
     tool,
-    GradioUI,
     load_dotenv
 )
 
 import os
 load_dotenv()
+import streamlit as st
 
 # -------------------------------------------------------------
 
@@ -96,7 +96,15 @@ agent = ToolCallingAgent(
 # -------------------------------------------------------------
 
 def main():
-    GradioUI(agent).launch()
+    # Streamlit UI
+    st.title("🤖 Financial Analyst Agent 📈")
+    query = st.text_input("Enter your query about a stock:",help="e.g., 'Run an analysis on AAPL'",
+                          placeholder="e.g., Run an analysis on AAPL")
+    
+    if st.button("Submit"):
+        if query:
+            response = agent.run(query)
+            st.write(response)
     
 if __name__ == "__main__":
     main()

@@ -22,10 +22,11 @@ pip install -r requirements.txt
 - Add .env file in yfinance-smolgent folder with API key
 - Then simply run below to open Gradio UI.
 ```python
-    python yfinance-agent.py
+    streamlit run yfinance-agent.py
 ```
 
 ## Dependencies
 
 - smolagents
 - yfinance
+- streamlit
