@@ -103,8 +103,9 @@ def main():
     
     if st.button("Submit"):
         if query:
-            response = agent.run(query)
-            st.write(response)
+            with st.spinner("Sourcing data and generating report..."):
+                response = agent.run(query)
+                st.write(response)
     
 if __name__ == "__main__":
     main()
