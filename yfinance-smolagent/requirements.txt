@@ -1,0 +1,4 @@
+openai==1.61.1
+pandas==2.2.3
+smolagents==1.8.0
+yfinance==0.2.52
