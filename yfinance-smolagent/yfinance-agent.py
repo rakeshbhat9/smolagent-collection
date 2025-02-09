@@ -97,8 +97,6 @@ agent = ToolCallingAgent(
 
 def main():
     GradioUI(agent).launch()
-    # task = "Check all the important finacials for EMG.L, provide your detailed analsyis on health of the company and wheter we should buy or sell the stock."
-    # print(agent.run(task))
-
+    
 if __name__ == "__main__":
     main()
