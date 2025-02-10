@@ -43,7 +43,9 @@ def get_company_info(stock: str) -> dict[str, dict]:
 @tool
 def get_company_financials(stock: str) -> dict[str, dict]:
     """
-    Fetches company incomes statement for a given stock symbol using yfinance.
+    This function retrieves various financial information including income statement,
+    balance sheet, cash flow statement, analyst price targets, earnings estimates
+    and latest news for a specified stock using the yfinance library.
 
     Args:
         stock: The stock symbol/ticker to look up (e.g., 'AAPL' for Apple Inc.)
@@ -65,6 +67,28 @@ def get_company_financials(stock: str) -> dict[str, dict]:
                  }
 
     return data_dict
+
+@tool
+def get_company_news(stock: str) -> dict[dict]:
+    """Get financial data and news for a given stock symbol.
+    
+    Args:
+        stock: The stock symbol (e.g. 'AAPL' for Apple Inc.)
+    Returns:
+        dict[dict]:
+            - latest_news: Most recent news article about the company
+    Example:
+        >>> data = get_company_news('AAPL')
+        >>> print(data['latest_news'])
+
+    """
+    import yfinance as yf
+    
+    data = yf.Ticker(stock)
+    
+    data_dict = {"latest_news":data.get_news()}
+
+    return data_dict
 # -------------------------------------------------------------
 
 
@@ -77,7 +101,7 @@ model = OpenAIServerModel(
 prompt = """
 You are an experienced financial analayst. 
 
-You have tools to get company information and all core financials given the stock symbol/s. 
+You have tools to get company information, latest news and all core financials given the stock symbol/s. 
 
 Your job is to analyze the data provided by the tools and provide detailed insights as per the user's query.
 
@@ -88,7 +112,7 @@ Your job is to analyze the data provided by the tools and provide detailed insig
 """
 
 agent = ToolCallingAgent(
-    tools=[get_company_info,get_company_financials],
+    tools=[get_company_info,get_company_financials,get_company_news],
     model=model,    
     prompt_templates={'system_prompt':prompt},
 )
