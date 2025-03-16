@@ -1,6 +1,6 @@
 from smolagents import (
     OpenAIServerModel,
-    CodeAgent,
+    ToolCallingAgent,
     tool,
     load_dotenv
 )
@@ -60,7 +60,7 @@ def query_database(query: str) -> pd.DataFrame:
         engine = get_db_engine()
         result_df = pd.read_sql(text(query), engine)
         engine.dispose()
-        return result_df
+        return result_df.to_dict(orient='records')
     except Exception as e:
         raise Exception(f"Error executing code: {str(e)}")
 
@@ -76,6 +76,7 @@ model = OpenAIServerModel(
 # Get table descriptions for the prompt
 table_descriptions = get_table_descriptions()
 
+
 prompt = f"""
 You are an expert Python developer with deep knowledge of SQL and pandas. 
 
@@ -83,23 +84,22 @@ The database has the following tables:
 {chr(10).join(table_descriptions)}
 
 IMPORTANT:
-- Write Python code that creates a pandas DataFrame named 'df' containing the query result. 
-    Example code format:
-    query = "SELECT * FROM sales LIMIT 5"
-    df = query_database(query)
+- Write SQL queries to extract data from the database.- 
 - Use "query_database" tool to execute SQL queries on the database
 - Using the output dataframe from the tool call, please provide detailed answer to the user's query.
+- Where data can be formatted in a tabular format, please do so to make it easier for the user to read.
+- All prices are in GBP (£).
 
 
 """
+
 # -------------------------------------------------------------
 
 # Initialize code agent
-agent = CodeAgent(
+agent = ToolCallingAgent(
     model=model,
     tools=[query_database],
     prompt_templates={'system_prompt': prompt},
-    additional_authorized_imports = ['pandas', 'sqlalchemy']
 )
 
 # -------------------------------------------------------------
@@ -132,11 +132,6 @@ def main():
                     # Generate and execute Python code for database query
                     output = agent.run(query)
                     st.write(output)
-                    # Display the results
-                    # if isinstance(df, pd.DataFrame):
-                        # st.markdown(format_results(df))
-                    # else:
-                        # st.error("Unexpected result format")
             except Exception as e:
                 st.error(f"Error: {str(e)}")
         else:
