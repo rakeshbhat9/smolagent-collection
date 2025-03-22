@@ -122,14 +122,45 @@ agent = ToolCallingAgent(
 def main():
     # Streamlit UI
     st.title("🤖 Financial Analyst Agent 📈")
-    query = st.text_input("Enter your query about a stock:",help="e.g., 'Run an analysis on AAPL'",
-                          placeholder="e.g., Run an analysis on AAPL")
     
-    if st.button("Submit"):
-        if query:
-            with st.spinner("Sourcing data and generating report..."):
-                response = agent.run(query)
-                st.write(response)
+    # Initialize chat history in session state if it doesn't exist
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
     
+    # Add example queries in the sidebar
+    st.sidebar.header("Example Questions")
+    st.sidebar.markdown("""
+    Try asking questions like:
+    - Run an analysis on AAPL
+    - Show me the latest news about TSLA
+    - Compare the financials of MSFT and GOOGL
+    - What are the key business metrics for AMZN?
+    - Tell me about META's company officers
+    """)
+    
+    # Display chat history
+    for i, (query, response) in enumerate(st.session_state.chat_history):
+        with st.chat_message("user"):
+            st.write(query)
+        with st.chat_message("assistant"):
+            st.write(response)
+    
+    # Chat input without the help parameter
+    query = st.chat_input("Ask me anything about stocks...")
+    
+    if query:
+        with st.chat_message("user"):
+            st.write(query)
+            
+        try:
+            with st.chat_message("assistant"):
+                with st.spinner("Sourcing data and generating report..."):
+                    response = agent.run(query)
+                    st.write(response)
+                    # Add the Q&A pair to chat history
+                    st.session_state.chat_history.append((query, response))
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
+
 if __name__ == "__main__":
     main()
