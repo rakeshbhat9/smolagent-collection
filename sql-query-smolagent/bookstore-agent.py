@@ -108,6 +108,10 @@ def main():
     st.title("📚 Bookstore Analytics Assistant")
     st.write("Ask questions about your bookstore's inventory, sales, and expenses!")
 
+    # Initialize chat history in session state if it doesn't exist
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
     # Add example queries in the sidebar
     st.sidebar.header("Example Questions")
     st.sidebar.markdown("""
@@ -119,23 +123,29 @@ def main():
     - Which items are running low in inventory?
     """)
     
-    query = st.text_input(
-        "Enter your question:",
-        help="e.g., 'What were the total sales last month?' or 'Show me the current inventory status'",
-        placeholder="e.g., What were the total sales last month?"
-    )
+    # Display chat history
+    for i, (query, response) in enumerate(st.session_state.chat_history):
+        with st.chat_message("user"):
+            st.write(query)
+        with st.chat_message("assistant"):
+            st.write(response)
     
-    if st.button("Run Query"):
-        if query:
-            try:
+    # Chat input
+    query = st.chat_input("Ask me anything about your bookstore...")
+    
+    if query:
+        with st.chat_message("user"):
+            st.write(query)
+            
+        try:
+            with st.chat_message("assistant"):
                 with st.spinner("Analyzing data..."):
-                    # Generate and execute Python code for database query
                     output = agent.run(query)
                     st.write(output)
-            except Exception as e:
-                st.error(f"Error: {str(e)}")
-        else:
-            st.warning("Please enter a question!")
+                    # Add the Q&A pair to chat history
+                    st.session_state.chat_history.append((query, output))
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
 
 if __name__ == "__main__":
     main()
