@@ -8,6 +8,8 @@ import os
 load_dotenv()
 import streamlit as st
 
+#----------------------------------------------------------------------------------------------------------
+
 # Initialize models
 def get_model(model_name: str):
     if model_name == "Gemini 2.0":
@@ -23,6 +25,7 @@ def get_model(model_name: str):
             api_key=os.getenv("MISTRAL_API_KEY"),
         )
 
+#----------------------------------------------------------------------------------------------------------
 # Get table descriptions for the prompt
 table_descriptions = get_table_descriptions()
 
@@ -39,6 +42,8 @@ IMPORTANT:
 - Where data can be formatted in a tabular format, please do so to make it easier for the user to read
 - All prices are in GBP (£)
 """
+
+#----------------------------------------------------------------------------------------------------------
 
 def main():
     st.title("📚 Bookstore Analytics Assistant")
@@ -97,6 +102,8 @@ def main():
                     st.session_state.chat_history.append((query, output))
         except Exception as e:
             st.error(f"Error: {str(e)}")
+
+#----------------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     main()
