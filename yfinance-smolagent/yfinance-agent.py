@@ -8,6 +8,16 @@ import os
 load_dotenv()
 import streamlit as st
 
+#----------------------------------------------------------------------------------------------------------
+
+from phoenix.otel import register
+
+# configure the Phoenix tracer
+tracer_provider = register(
+  project_name="yfinance-agent",
+  auto_instrument=True 
+  )
+
 #----------------------------------------------------------------------------------
 
 # Initialize models

@@ -10,6 +10,16 @@ import streamlit as st
 
 #----------------------------------------------------------------------------------------------------------
 
+from phoenix.otel import register
+
+# configure the Phoenix tracer
+tracer_provider = register(
+  project_name="bookstore-agent", 
+  auto_instrument=True 
+)
+
+#----------------------------------------------------------------------------------------------------------
+
 # Initialize models
 def get_model(model_name: str):
     if model_name == "Gemini 2.0":
