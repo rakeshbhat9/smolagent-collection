@@ -17,18 +17,11 @@ tracer_provider = register(project_name="yfinance-agent", auto_instrument=True)
 
 # Initialize models
 def get_model(model_name: str):
-    if model_name == "Gemini 2.0":
-        return OpenAIServerModel(
-            model_id="gemini-2.0-flash-001",
-            api_base="https://generativelanguage.googleapis.com/v1beta/openai/",
-            api_key=os.getenv("GEMINI_API_KEY"),
-        )
-    else:  # Mistral
-        return OpenAIServerModel(
-            model_id="mistral-small-latest",
-            api_base="https://api.mistral.ai/v1",
-            api_key=os.getenv("MISTRAL_API_KEY"),
-        )
+    return OpenAIServerModel(
+        model_id=model_name,
+        api_base="https://openrouter.ai/api/v1",
+        api_key=os.getenv("OPENROUTER_API_KEY"),
+    )
 
 
 # ----------------------------------------------------------------------------------
@@ -48,14 +41,8 @@ Your job is to analyze the data provided by the tools and provide detailed insig
         "update_plan_pre_messages": "",
         "update_plan_post_messages": "",
     },
-    "managed_agent": {
-        "task": "",
-        "report": ""
-    },
-    "final_answer": {
-        "pre_messages": "",
-        "post_messages": ""
-    }
+    "managed_agent": {"task": "", "report": ""},
+    "final_answer": {"pre_messages": "", "post_messages": ""},
 }
 # ----------------------------------------------------------------------------------
 
@@ -66,7 +53,9 @@ def main():
 
     # Model selection
     model_name = st.selectbox(
-        "Select Language Model", ["Gemini 2.0", "Mistral"], index=0
+        "Select Language Model",
+        ["openai/gpt-4.1-nano"],
+        index=0,
     )
 
     # Initialize model and agent
@@ -75,6 +64,7 @@ def main():
         tools=[get_company_info, get_company_financials, get_company_news],
         model=model,
         prompt_templates=prompt_templates,
+        max_tool_threads=1,
     )
 
     # Initialize chat history in session state if it doesn't exist
