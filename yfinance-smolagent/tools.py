@@ -1,4 +1,6 @@
 from smolagents import tool
+import json
+import pandas as pd
 
 #----------------------------------------------------------------------------------
 @tool
@@ -31,6 +33,22 @@ def get_company_info(stock: str) -> dict[str, dict]:
 
 #----------------------------------------------------------------------------------
 
+def convert_timestamps_to_strings(obj):
+    """Recursively convert pandas Timestamps to strings in nested data structures."""
+    if isinstance(obj, pd.Timestamp):
+        return obj.strftime('%Y-%m-%d')
+    elif isinstance(obj, dict):
+        return {str(k) if isinstance(k, pd.Timestamp) else k: convert_timestamps_to_strings(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_timestamps_to_strings(item) for item in obj]
+    elif pd.isna(obj):
+        return None
+    elif isinstance(obj, (pd.Series, pd.DataFrame)):
+        # Convert pandas objects to dict and then process
+        return convert_timestamps_to_strings(obj.to_dict())
+    else:
+        return obj
+
 @tool
 def get_company_financials(stock: str) -> dict[str, dict]:
     """
@@ -48,16 +66,34 @@ def get_company_financials(stock: str) -> dict[str, dict]:
     """
     import yfinance as yf
     
-    data = yf.Ticker(stock)
-    
-    data_dict = {"income_staement":data.get_income_stmt(as_dict=True,pretty=True),
-                 "balance_sheet":data.get_balance_sheet(as_dict=True,pretty=True),
-                 "cash_flow":data.get_cashflow(as_dict=True,pretty=True),
-                 "analyst_price_target":data.get_analyst_price_targets(),
-                 "earnings_estimate":data.get_earnings_estimate(as_dict=True),
-                 }
-
-    return data_dict
+    try:
+        data = yf.Ticker(stock)
+        
+        # Get raw data
+        raw_data = {
+            "income_statement": data.get_income_stmt(as_dict=True, pretty=True),
+            "balance_sheet": data.get_balance_sheet(as_dict=True, pretty=True),
+            "cash_flow": data.get_cashflow(as_dict=True, pretty=True),
+            "analyst_price_target": data.get_analyst_price_targets(),
+            "earnings_estimate": data.get_earnings_estimate(as_dict=True),
+        }
+        
+        # Convert all timestamps to strings to make it JSON serializable
+        data_dict = convert_timestamps_to_strings(raw_data)
+        
+        # Test if the data is JSON serializable
+        try:
+            json.dumps(data_dict)
+        except (TypeError, ValueError) as e:
+            print(f"Serialization test failed: {e}")
+            # Return a simplified version if full data fails
+            return {"error": f"Data serialization failed: {str(e)}", "stock": stock}
+        
+        return data_dict
+        
+    except Exception as e:
+        print(f"Error in get_company_financials for {stock}: {e}")
+        return {"error": str(e), "stock": stock}
 
 #----------------------------------------------------------------------------------
 

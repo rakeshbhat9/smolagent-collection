@@ -125,7 +125,7 @@ def main():
     # Model selection
     model_name = st.selectbox(
         "Select Language Model",
-        ["openai/gpt-4.1-nano"],
+        ["openai/gpt-5-mini","openai/gpt-4.1-nano"],
         index=0,
     )
 
