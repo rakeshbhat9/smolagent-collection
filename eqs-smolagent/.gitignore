@@ -1,0 +1,6 @@
+.env
+.gradio/*
+__pycache__/*.pyc
+*.pyc
+*.ipynb
+data/*
