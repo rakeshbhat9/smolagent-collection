@@ -53,36 +53,40 @@ def list_securities() -> list:
 @tool
 def security_valuation(security: str) -> dict:
     """
-    For a given security, return current position, market price, and calculated market value.
-    Useful for identifying mismatches between system and recalculated values.
+    For a given security, analyze position and price data for discrepancies.
     
     Args:
-        security (str): The name or identifier of the security to analyze.
+        security (str): The security identifier
         
     Returns:
-        dict: A dictionary containing:
-            - 'Security' (str): The security name
-            - 'Current Position' (float): Current position quantity
-            - 'Market Price' (float): Current market price
-            - 'Market Value (System)' (float): System-calculated market value
-            - 'Market Value (Recalc)' (float): Recalculated market value
-            - 'Valuation Diff' (float): Difference between recalculated and system values
-            - 'error' (str): Error message if security not found
+        dict: Detailed analysis of position and price data
     """
     pos = positions[positions["Security"] == security]
+    trades = trade_activity[trade_activity["Security"] == security]
+    
     if pos.empty:
         return {"error": f"No position found for {security}"}
 
     row = pos.iloc[0]
     calc_value = row["Current Position"] * row["Market Price"]
+    
+    # Calculate average trade price
+    if not trades.empty:
+        last_trade = trades.iloc[-1]
+        price_diff = row["Market Price"] - last_trade["Price"]
+    else:
+        price_diff = 0
 
     return {
         "Security": security,
         "Current Position": row["Current Position"],
         "Market Price": row["Market Price"],
+        "Last Trade Price": last_trade["Price"] if not trades.empty else None,
+        "Price Difference": price_diff,
         "Market Value (System)": row["Market Value"],
         "Market Value (Recalc)": calc_value,
-        "Valuation Diff": calc_value - row["Market Value"]
+        "Valuation Diff": calc_value - row["Market Value"],
+        "Trade Count": len(trades)
     }
 
 @tool
@@ -131,45 +135,83 @@ def equity_breakdown() -> dict:
         "Break": calc_equity - reported,
     }
 
+@tool
+def analyze_price_impact(security: str) -> dict:
+    """
+    Analyze price impact on market value for a security.
+    
+    Args:
+        security (str): The security identifier
+        
+    Returns:
+        dict: Price impact analysis
+    """
+    pos = positions[positions["Security"] == security]
+    trades = trade_activity[trade_activity["Security"] == security]
+    
+    if pos.empty:
+        return {"error": f"No position found for {security}"}
+
+    row = pos.iloc[0]
+    if not trades.empty:
+        last_trade = trades.iloc[-1]
+        theoretical_value = row["Current Position"] * last_trade["Price"]
+        reported_value = row["Market Value"]
+        price_impact = reported_value - theoretical_value
+        
+        return {
+            "Security": security,
+            "System Price": row["Market Price"],
+            "Last Trade Price": last_trade["Price"],
+            "Position": row["Current Position"],
+            "Theoretical Value": theoretical_value,
+            "Reported Value": reported_value,
+            "Price Impact": price_impact
+        }
+    return {"error": "No trades found"}
+
 # ======================================
 # Agent Setup
 # ======================================
 
 prompt_templates = {
-            "system_prompt": f"""
-                You are a reconciliation assistant for an Asset Management firm.
+    "system_prompt": """
+    You are a precise reconciliation assistant for an Asset Management firm. Your task is to identify the source of differences between Calculated and Reported Closing Equity.
 
-                You are given three datasets:
-                - **Total Equity data**: {total_equity}
-                - **Trade Activity data**: {trade_activity}
-                - **Positions data**: {positions}                
-
-                Use the provided tools to:
-                1. Call equity_breakdown() to find the overall break.
-                2. Call list_securities() to get all securities.
-                3. For each security, use security_valuation() to see if market value discrepancies exist.
-                4. If needed, use security_trades() to check if trade impacts explain mismatches.
-                5. At the end, provide:
-                - Break Summary (calculated vs reported equity)
-                - Underliers causing the issue
-                - Likely root cause (e.g., pricing mismatch, missing trade, wrong position)
-                - Suggested next steps for reconciliation team
-                """,
-            "planning": {
-                "initial_plan": "",
-                "update_plan_pre_messages": "",
-                "update_plan_post_messages": "",
-            },
-            "managed_agent": {"task": "", "report": ""},
-            "final_answer": {"pre_messages": "", "post_messages": ""},
-            }
+    Analysis Steps:
+    1. First, check the overall equity break using equity_breakdown()
+    2. Get all securities using list_securities()
+    3. For each security:
+       - Check security_valuation() for position and price discrepancies
+       - Use analyze_price_impact() to quantify price-related issues
+       - Review security_trades() for any trade-related impacts
+    
+    Focus Areas:
+    - Price differences between trade price and system price
+    - Position mismatches
+    - Market value calculation discrepancies
+    
+    Provide:
+    1. Total break amount and percentage
+    2. Specific securities causing the break
+    3. Root cause analysis (price/position/calculation issue)
+    4. Clear recommendations for fixing the break
+    """,
+    "planning": {
+        "initial_plan": "",
+        "update_plan_pre_messages": "",
+        "update_plan_post_messages": "",
+    },
+    "managed_agent": {"task": "", "report": ""},
+    "final_answer": {"pre_messages": "", "post_messages": ""},
+    }
 
 model = OpenAIServerModel(
     model_id="deepseek/deepseek-chat-v3.1",
     api_base="https://openrouter.ai/api/v1",
     api_key=os.getenv("OPENROUTER_API_KEY"),
 )
-tools = [list_securities, security_valuation, security_trades, equity_breakdown]
+tools = [list_securities, security_valuation, security_trades, equity_breakdown,analyze_price_impact]
 agent = ToolCallingAgent(tools=tools, model=model,prompt_templates=prompt_templates, add_base_tools=True)
 
 # ======================================
