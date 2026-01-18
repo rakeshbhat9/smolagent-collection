@@ -15,7 +15,7 @@ load_dotenv()
 # Model configurations for different agent roles
 MODEL_CONFIGS = {
     "researcher": {
-        "model_id": "google/gemini-2.0-flash-thinking-exp-01-21",
+        "model_id": "google/gemini-3-flash-preview",
         "api_base": "https://openrouter.ai/api/v1",
         "api_key": os.getenv("OPENROUTER_API_KEY"),
         "description": "Strong reasoning and cost-effective for comprehensive research"
@@ -27,13 +27,13 @@ MODEL_CONFIGS = {
         "description": "Excellent analytical assessment for methodological review"
     },
     "council_comprehensiveness": {
-        "model_id": "google/gemini-2.0-flash-thinking-exp-01-21",
+        "model_id": "google/gemini-2.5-flash",
         "api_base": "https://openrouter.ai/api/v1",
         "api_key": os.getenv("OPENROUTER_API_KEY"),
         "description": "Good at holistic coverage assessment"
     },
     "council_clarity": {
-        "model_id": "openai/gpt-4.1-turbo",
+        "model_id": "openai/gpt-5-mini",
         "api_base": "https://openrouter.ai/api/v1",
         "api_key": os.getenv("OPENROUTER_API_KEY"),
         "description": "Strong language and communication assessment"

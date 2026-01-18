@@ -11,6 +11,20 @@ This system implements a novel quality assurance approach to AI research:
 3. **Conditional Retry Logic** ensures quality through iterative improvement
 4. **Chainlit UI** provides real-time visibility into agent thinking and handovers
 
+## Screenshots
+
+### Research Phase
+![Research Phase](images/Screenshot%202026-01-18%2011.26.34.png)
+
+### Council Review
+![Council Review](images/Screenshot%202026-01-18%2011.26.58.png)
+
+### Review Results
+![Review Results](images/Screenshot%202026-01-18%2011.27.10.png)
+
+### Final Report
+![Final Report](images/Screenshot%202026-01-18%2011.27.24.png)
+
 ## Features
 
 ### Research Tools

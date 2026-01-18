@@ -66,8 +66,8 @@ def web_search(query: str, max_results: int = 5) -> dict:
     Search the web for information using DuckDuckGo.
 
     Args:
-        query (str): The search query to execute
-        max_results (int): Maximum number of results to return (default: 5)
+        query: The search query to execute
+        max_results: Maximum number of results to return (default: 5)
 
     Returns:
         dict: {
@@ -130,8 +130,8 @@ def scrape_webpage(url: str, extract_links: bool = False) -> dict:
     Scrape and extract content from a webpage.
 
     Args:
-        url (str): The URL to scrape
-        extract_links (bool): Whether to extract links from the page
+        url: The URL to scrape
+        extract_links: Whether to extract links from the page
 
     Returns:
         dict: {
@@ -237,9 +237,9 @@ def analyze_document(file_path: str, analysis_type: str = "summary") -> dict:
     Analyze documents (PDF, TXT, DOCX) for research purposes.
 
     Args:
-        file_path (str): Path to document file or URL to PDF
-        analysis_type (str): Type of analysis - "summary", "extract_citations",
-                            "key_points", "full_text"
+        file_path: Path to document file or URL to PDF
+        analysis_type: Type of analysis - "summary", "extract_citations",
+                       "key_points", "full_text"
 
     Returns:
         dict: {
@@ -377,8 +377,8 @@ def synthesize_data(sources: list, synthesis_type: str = "comparison") -> dict:
     Synthesize information from multiple sources.
 
     Args:
-        sources (list): List of source dictionaries with 'content' and 'source' keys
-        synthesis_type (str): "comparison", "timeline", "consensus", "conflicts"
+        sources: List of source dictionaries with 'content' and 'source' keys
+        synthesis_type: "comparison", "timeline", "consensus", "conflicts"
 
     Returns:
         dict: {
@@ -477,8 +477,8 @@ def track_citations(content: str, source_url: str = None) -> dict:
     Extract and track citations from research content.
 
     Args:
-        content (str): Text content to extract citations from
-        source_url (str): Original source URL for attribution
+        content: Text content to extract citations from
+        source_url: Original source URL for attribution
 
     Returns:
         dict: {

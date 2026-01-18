@@ -22,3 +22,6 @@ pandas>=2.2.0
 
 # Async support
 aiohttp>=3.10.0
+
+# PDF generation
+fpdf2>=2.7.0

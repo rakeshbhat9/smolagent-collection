@@ -10,10 +10,119 @@ Provides real-time visualization of:
 
 import chainlit as cl
 import asyncio
+import os
+import re
+from datetime import datetime
+from fpdf import FPDF
 from agents.researcher import create_researcher_agent
 from agents.council import create_council_agents, get_reviewer_names
 from orchestration.workflow import ResearchOrchestrator
 from config import get_all_model_info
+
+
+class ResearchPDF(FPDF):
+    """Custom PDF class for research reports."""
+
+    def __init__(self):
+        super().__init__()
+        self.set_auto_page_break(auto=True, margin=15)
+
+    def header(self):
+        self.set_font('Helvetica', 'B', 12)
+        self.cell(0, 10, 'Research Report - Multi-Agent Research System', align='C', ln=True)
+        self.ln(5)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('Helvetica', 'I', 8)
+        self.cell(0, 10, f'Page {self.page_no()}', align='C')
+
+    def add_title(self, title: str):
+        self.set_font('Helvetica', 'B', 16)
+        self.multi_cell(0, 10, title)
+        self.ln(5)
+
+    def add_section(self, title: str, content: str):
+        self.set_font('Helvetica', 'B', 12)
+        self.set_fill_color(240, 240, 240)
+        self.cell(0, 8, title, fill=True, ln=True)
+        self.ln(2)
+        self.set_font('Helvetica', '', 10)
+        # Clean content of problematic characters
+        clean_content = content.encode('latin-1', 'replace').decode('latin-1')
+        self.multi_cell(0, 5, clean_content)
+        self.ln(5)
+
+    def add_review(self, reviewer: str, score: float, recommendation: str, review_text: str):
+        # Reviewer name
+        self.set_font('Helvetica', 'B', 11)
+        status = "PASS" if score >= 3.0 else "NEEDS IMPROVEMENT"
+        self.cell(0, 7, f"{reviewer}", ln=True)
+
+        # Score and recommendation
+        self.set_font('Helvetica', '', 10)
+        self.cell(0, 5, f"Score: {score:.1f}/5.0 | Status: {status} | Recommendation: {recommendation}", ln=True)
+        self.ln(2)
+
+        # Review text
+        clean_text = review_text.encode('latin-1', 'replace').decode('latin-1')
+        self.multi_cell(0, 5, clean_text)
+        self.ln(5)
+
+
+def generate_research_pdf(query: str, research_report: str, reviews: list, scores: list, iteration: int) -> str:
+    """
+    Generate a PDF from the research report and reviews.
+
+    Args:
+        query: Original research query
+        research_report: The research report content
+        reviews: List of review dictionaries
+        scores: List of scores
+        iteration: Final iteration number
+
+    Returns:
+        str: Path to the generated PDF file
+    """
+    pdf = ResearchPDF()
+    pdf.add_page()
+
+    # Title
+    pdf.add_title(f"Research: {query[:100]}{'...' if len(query) > 100 else ''}")
+
+    # Metadata
+    pdf.set_font('Helvetica', 'I', 9)
+    pdf.cell(0, 5, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", ln=True)
+    pdf.cell(0, 5, f"Total Iterations: {iteration}", ln=True)
+    passing = sum(1 for s in scores if s >= 3.0)
+    pdf.cell(0, 5, f"Final Status: {'Accepted' if passing >= 2 else 'Max Iterations Reached'} ({passing}/3 passing reviews)", ln=True)
+    pdf.ln(10)
+
+    # Research Report
+    pdf.add_section("Research Report", research_report)
+
+    # Council Reviews
+    pdf.add_page()
+    pdf.set_font('Helvetica', 'B', 14)
+    pdf.cell(0, 10, "Council Reviews", ln=True)
+    pdf.ln(5)
+
+    for review in reviews:
+        pdf.add_review(
+            reviewer=review['reviewer'],
+            score=review['score'],
+            recommendation=review['recommendation'],
+            review_text=review['review_text']
+        )
+
+    # Save PDF
+    os.makedirs("data/exports", exist_ok=True)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    safe_query = re.sub(r'[^\w\s-]', '', query[:30]).strip().replace(' ', '_')
+    filename = f"data/exports/research_{safe_query}_{timestamp}.pdf"
+    pdf.output(filename)
+
+    return filename
 
 
 @cl.on_chat_start
@@ -225,6 +334,24 @@ The research has met the quality standards ({passing} reviewers scored 3.0 or hi
 **Total Iterations**: {iteration + 1}
 """
                 await cl.Message(content=decision_msg).send()
+
+                # Generate and offer PDF download
+                try:
+                    pdf_path = generate_research_pdf(
+                        query=query,
+                        research_report=research_report,
+                        reviews=reviews,
+                        scores=scores,
+                        iteration=iteration + 1
+                    )
+                    elements = [cl.File(name="research_report.pdf", path=pdf_path, display="inline")]
+                    await cl.Message(
+                        content="**Download your research report as PDF:**",
+                        elements=elements
+                    ).send()
+                except Exception as e:
+                    await cl.Message(content=f"PDF generation failed: {str(e)}").send()
+
                 workflow_step.output = "Research accepted"
                 return
 
@@ -255,6 +382,24 @@ The research has been through {iteration + 1} iterations. While it didn't fully 
 Consider the council feedback for future research improvements.
 """
                 await cl.Message(content=final_msg).send()
+
+                # Generate and offer PDF download
+                try:
+                    pdf_path = generate_research_pdf(
+                        query=query,
+                        research_report=research_report,
+                        reviews=reviews,
+                        scores=scores,
+                        iteration=iteration + 1
+                    )
+                    elements = [cl.File(name="research_report.pdf", path=pdf_path, display="inline")]
+                    await cl.Message(
+                        content="**Download your research report as PDF:**",
+                        elements=elements
+                    ).send()
+                except Exception as e:
+                    await cl.Message(content=f"PDF generation failed: {str(e)}").send()
+
                 workflow_step.output = "Completed maximum iterations"
                 return
 

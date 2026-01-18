@@ -43,8 +43,7 @@ def create_researcher_agent() -> ToolCallingAgent:
             track_citations
         ],
         model=model,
-        prompt_templates=RESEARCHER_PROMPT,
-        max_tool_threads=1  # Sequential tool execution for reliability
+        prompt_templates=RESEARCHER_PROMPT
     )
 
     return agent
